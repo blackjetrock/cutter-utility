@@ -102,6 +102,63 @@ proc open_terminal_window {w} {
     return $w.text
 }
 
+proc send_cut_file {filename f} {
+    
+    set start_clock [clock seconds]
+    
+    # Read the hex file
+    
+    set g [open $filename]
+    set txt [read $g]
+    close $g
+    
+    # Flush
+    puts "Flushing..."
+    set done 0
+    while { !$done } {
+	set tx [read $f]
+	if { [string length $tx] == 0 } {
+	    set done 1
+	} else {
+	    puts $tx
+	}
+    }
+    
+    
+    puts "Sending $filename"
+    
+    set i 0
+    
+    foreach line [split $txt ";"] {
+	if { [string length $line] == 0 } {
+	    break
+	}
+	
+	puts $f "$line;"
+	flush $f
+	
+	incr i 1
+	if { [expr ($i % 100)==0] } {
+	    puts "Sent $i lines..."
+	}
+    }
+
+    # End transfer
+    puts $f "@"
+    
+    set end_clock [clock seconds]
+    
+    set elapsed [expr $end_clock - $start_clock]
+    puts "Elapsed time:$elapsed"
+}
+
+proc write_data {txt} {
+    global f
+    puts "W:$txt"
+    puts -nonewline $f $txt
+    flush $f
+}
+
 open_terminal_window .t
 pack .t -side top -fill both -expand true
 
